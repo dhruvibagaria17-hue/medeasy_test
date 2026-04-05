@@ -1,0 +1,33 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+  background-color: #F8F9FA;
+  color: #1A1A1A;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+}
+
+#root {
+  width: 100%;
+}
+
+@layer components {
+  .btn {
+    @apply px-4 py-2 rounded-lg transition-all duration-300 active:scale-95 flex items-center gap-2;
+  }
+  .btn-primary {
+    @apply bg-primary text-textPrimary hover:bg-opacity-80;
+  }
+  .card {
+    @apply bg-white p-6 rounded-xl shadow-sm hover:shadow-md transition-shadow duration-300;
+  }
+}
