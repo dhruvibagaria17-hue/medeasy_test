@@ -27,6 +27,7 @@ import SMSReminderPopup from './SMSReminderPopup.jsx';
 import AuthModal from './AuthModal.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
 import { MEDICINE_DATA } from '../data/medicines.js';
+import { getUserFolders, setUserFolders, logUserEvent } from '../services/userData.js';
 
 const DrugDetails = () => {
   const { user } = useAuth();
@@ -110,6 +111,7 @@ const DrugDetails = () => {
   const drugInfo = MEDICINE_DATA[decodedName];
 
   useEffect(() => {
+    let cancelled = false;
     if (!drugInfo) {
       setIsNotFoundOpen(true);
       return;
@@ -123,13 +125,24 @@ const DrugDetails = () => {
     }
 
     // Load folders for saving
-    if (user) {
-      const storageKey = `medicine_folders_${user.email || user.phone}`;
-      const savedFolders = JSON.parse(localStorage.getItem(storageKey) || '[]');
-      setFolders(savedFolders);
-    } else {
-      setFolders([]);
-    }
+    const run = async () => {
+      if (!user) {
+        setFolders([]);
+        return;
+      }
+      try {
+        const saved = await getUserFolders(user.uid);
+        if (!cancelled) setFolders(saved);
+      } catch (_) {
+        if (!cancelled) setFolders([]);
+      }
+      logUserEvent(user.uid, { type: 'view_drug', medicineKey: decodedName }).catch(() => {});
+    };
+
+    run();
+    return () => {
+      cancelled = true;
+    };
   }, [name, drugInfo, decodedName, user]);
 
   const closeNotFound = () => {
@@ -156,11 +169,11 @@ const DrugDetails = () => {
       return f;
     });
     
-    if (user) {
-      const storageKey = `medicine_folders_${user.email || user.phone}`;
-      localStorage.setItem(storageKey, JSON.stringify(updated));
-    }
     setFolders(updated);
+    if (user) {
+      setUserFolders(user.uid, updated).catch(() => {});
+      logUserEvent(user.uid, { type: 'save_medicine', folderId, medicineKey: decodedName }).catch(() => {});
+    }
     setSaveSuccess(true);
     setTimeout(() => {
       setSaveSuccess(false);

@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Info, Search, Database, Mail, Pill, History, Bookmark } from 'lucide-react';
+import { Info, Search, Database, Mail, Pill, History, Bookmark, ShieldCheck } from 'lucide-react';
 
 const Sidebar = () => {
   const location = useLocation();
@@ -10,6 +10,7 @@ const Sidebar = () => {
     { icon: History, label: 'Recent searches', path: '/recent' },
     { icon: Bookmark, label: 'Saved medicines', path: '/saved' },
     { icon: Database, label: 'Data sources', path: '/sources' },
+    { icon: ShieldCheck, label: 'Data security', path: '/security' },
     { icon: Mail, label: 'Contact us', path: '/contact' },
   ];
 

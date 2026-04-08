@@ -8,6 +8,7 @@ import RecentSearches from './components/RecentSearches.jsx'
 import SavedMedicines from './components/SavedMedicines.jsx'
 import AboutUs from './components/AboutUs.jsx'
 import DataSources from './components/DataSources.jsx'
+import DataSecurity from './components/DataSecurity.jsx'
 
 function App() {
   return (
@@ -21,6 +22,7 @@ function App() {
           <Route path="/drug/:name" element={<DrugDetails />} />
           <Route path="/about" element={<AboutUs />} />
           <Route path="/sources" element={<DataSources />} />
+          <Route path="/security" element={<DataSecurity />} />
           <Route path="/contact" element={<ContactUs />} />
         </Route>
       </Routes>

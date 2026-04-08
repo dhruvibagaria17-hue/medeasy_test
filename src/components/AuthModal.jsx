@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Mail, Phone, Lock, Eye, EyeOff, LogIn, UserPlus, Github, Chrome } from 'lucide-react';
+import { X, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.jsx';
 
 const GoogleIcon = () => (
@@ -34,32 +34,26 @@ const AuthModal = ({ isOpen, onClose }) => {
   });
   const [error, setError] = useState('');
   const [isLinking, setIsLinking] = useState(false);
-  const { login, validatePassword } = useAuth();
+  const [info, setInfo] = useState('');
+  const { validatePassword, signInWithGoogle, signUpWithEmail, signInWithEmail, resetPassword } = useAuth();
 
   const handleGoogleSignIn = () => {
     setIsLinking(true);
-    
-    // Simulate real Google account connection
-    const googleAuthUrl = "https://accounts.google.com/o/oauth2/v2/auth";
-    console.log(`Connecting to Google account via ${googleAuthUrl}...`);
+    setError('');
+    setInfo('');
 
-    setTimeout(() => {
-      const userData = {
-        name: 'Dhruv', // Using a name from context or mock
-        email: 'dhruv@gmail.com',
-        avatar: 'https://lh3.googleusercontent.com/a/default-user',
-        authMethod: 'google',
-        verified: true
-      };
-      login(userData);
-      setIsLinking(false);
-      onClose();
-    }, 2000);
+    signInWithGoogle()
+      .then(() => onClose())
+      .catch((e) => {
+        setError(e?.message || 'Google sign-in failed. Please try again.');
+      })
+      .finally(() => setIsLinking(false));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    setInfo('');
 
     if (!isLogin) {
       const passError = validatePassword(formData.password);
@@ -69,15 +63,31 @@ const AuthModal = ({ isOpen, onClose }) => {
       }
     }
 
-    // Mock email auth logic
-    const userData = {
-      name: formData.name || formData.email.split('@')[0] || 'User',
-      email: formData.email,
-      authMethod: 'email'
-    };
-    
-    login(userData);
-    onClose();
+    try {
+      if (isLogin) {
+        await signInWithEmail({ email: formData.email, password: formData.password });
+      } else {
+        await signUpWithEmail({ email: formData.email, password: formData.password, name: formData.name });
+      }
+      onClose();
+    } catch (e) {
+      setError(e?.message || 'Authentication failed. Please try again.');
+    }
+  };
+
+  const handleForgotPassword = async () => {
+    setError('');
+    setInfo('');
+    if (!formData.email) {
+      setError('Enter your email above, then click “Forgot password?”');
+      return;
+    }
+    try {
+      await resetPassword(formData.email);
+      setInfo('Password reset email sent. Please check your inbox.');
+    } catch (e) {
+      setError(e?.message || 'Could not send reset email. Please try again.');
+    }
   };
 
   if (!isOpen) return null;
@@ -186,8 +196,21 @@ const AuthModal = ({ isOpen, onClose }) => {
               )}
             </div>
 
+            {isLogin && (
+              <button
+                type="button"
+                onClick={handleForgotPassword}
+                className="text-[11px] font-bold text-primary hover:underline ml-1"
+              >
+                Forgot password?
+              </button>
+            )}
+
             {error && (
               <p className="text-accent2 text-[11px] font-medium ml-1">{error}</p>
+            )}
+            {info && (
+              <p className="text-secondary text-[11px] font-medium ml-1">{info}</p>
             )}
 
             <button 

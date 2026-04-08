@@ -16,6 +16,7 @@ import {
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import AuthModal from './AuthModal.jsx';
+import { getUserFolders, setUserFolders, logUserEvent } from '../services/userData.js';
 
 const SavedMedicines = () => {
   const { user } = useAuth();
@@ -26,21 +27,31 @@ const SavedMedicines = () => {
   const [expandedFolders, setExpandedFolders] = useState({});
 
   useEffect(() => {
-    if (user) {
-      const storageKey = `medicine_folders_${user.email || user.phone}`;
-      const saved = JSON.parse(localStorage.getItem(storageKey) || '[]');
-      setFolders(saved);
-    } else {
-      setFolders([]);
-    }
+    let cancelled = false;
+    const run = async () => {
+      if (!user) {
+        setFolders([]);
+        return;
+      }
+      try {
+        const saved = await getUserFolders(user.uid);
+        if (!cancelled) setFolders(saved);
+      } catch (_) {
+        if (!cancelled) setFolders([]);
+      }
+    };
+    run();
+    return () => {
+      cancelled = true;
+    };
   }, [user]);
 
-  const saveToLocalStorage = (updated) => {
-    if (user) {
-      const storageKey = `medicine_folders_${user.email || user.phone}`;
-      localStorage.setItem(storageKey, JSON.stringify(updated));
-    }
+  const saveFolders = async (updated) => {
     setFolders(updated);
+    if (!user) return;
+    try {
+      await setUserFolders(user.uid, updated);
+    } catch (_) {}
   };
 
   if (!user) {
@@ -74,14 +85,16 @@ const SavedMedicines = () => {
       name: newFolderName, 
       medicines: [] 
     }];
-    saveToLocalStorage(updated);
+    saveFolders(updated);
+    logUserEvent(user.uid, { type: 'create_folder', folderName: newFolderName }).catch(() => {});
     setNewFolderName('');
     setIsNewFolderModalOpen(false);
   };
 
   const deleteFolder = (id) => {
     const updated = folders.filter(f => f.id !== id);
-    saveToLocalStorage(updated);
+    saveFolders(updated);
+    logUserEvent(user.uid, { type: 'delete_folder', folderId: id }).catch(() => {});
   };
 
   const toggleFolder = (id) => {
@@ -95,7 +108,8 @@ const SavedMedicines = () => {
       }
       return f;
     });
-    saveToLocalStorage(updated);
+    saveFolders(updated);
+    logUserEvent(user.uid, { type: 'remove_medicine', folderId, medicineKey: medName }).catch(() => {});
   };
 
   return (
